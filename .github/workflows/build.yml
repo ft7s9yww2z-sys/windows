@@ -1,0 +1,45 @@
+name: Build EXE Execution File
+
+# 触发条件：当 main 分支有代码 push，或者你手动点击运行时触发
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    # 关键点：打包 .exe 必须在 Windows 系统环境下运行
+    runs-on: windows-latest
+
+    steps:
+    # 1. 拉取仓库中的代码
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # 2. 配置 Python 环境
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10' # 可以修改为你需要的 Python 版本
+
+    # 3. 安装打包工具及项目依赖
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyinstaller
+        # 如果你的项目有 requirements.txt，取消下面这行的注释
+        # pip install -r requirements.txt
+
+    # 4. 执行 PyInstaller 打包命令
+    - name: Run PyInstaller
+      run: |
+        pyinstaller --onefile main.py
+        # --onefile 表示打包成单个独立的 exe 文件
+        # 如果不需要弹出黑色的 CMD 窗口，可以加上 -w 参数：pyinstaller --onefile -w main.py
+
+    # 5. 将打包好的 exe 文件上传到 GitHub Actions，供你下载
+    - name: Upload Output EXE
+      uses: actions/upload-artifact@v4
+      with:
+        name: my-windows-app # 下载时压缩包的名字
+        path: dist/*.exe     # PyInstaller 默认输出在 dist 文件夹下
